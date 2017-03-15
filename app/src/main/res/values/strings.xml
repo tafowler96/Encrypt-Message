@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">Encrypt-Message</string>
+    <string name="encryptText">Encrypt</string>
+    <string name="decryptText">Decrypt</string>
 </resources>
