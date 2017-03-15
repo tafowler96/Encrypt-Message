@@ -39,7 +39,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 byte[] message = ((EditText) findViewById(R.id.message)).getText().toString().getBytes();
-                byte[] encrypted = encrypt(pair.getPrivate(), message);
+                byte[] encrypted = encrypt(pair.getPublic(), message);
                 ((TextView)findViewById(R.id.encryptedMessage)).setText(encrypted.toString());
             }
         });
@@ -66,12 +66,12 @@ public class MainActivity extends AppCompatActivity {
         editor.putString("privateKey", pair.getPrivate().toString());
     }
 
-    public byte[] encrypt(Key privKey, byte[] plaintext) {
+    public byte[] encrypt(Key pubKey, byte[] plaintext) {
         try {
             Cipher cipher = Cipher.getInstance("RSA/NONE/OAEPWithSHA256AndMGF1Padding", "BC");
-            cipher.init(Cipher.ENCRYPT_MODE, privKey);
-            cipher.update(plaintext);
-            return cipher.doFinal();
+            cipher.init(Cipher.ENCRYPT_MODE, pubKey);
+//            cipher.update(plaintext);
+            return cipher.doFinal(plaintext);
         } catch (Exception e) {
             e.printStackTrace();
         }
