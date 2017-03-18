@@ -17,6 +17,7 @@ import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.SecureRandom;
+import java.security.Security;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.RSAKeyGenParameterSpec;
 
@@ -25,6 +26,9 @@ import javax.crypto.NoSuchPaddingException;
 
 public class MainActivity extends AppCompatActivity {
 
+    static {
+        Security.insertProviderAt(new org.spongycastle.jce.provider.BouncyCastleProvider(), 1);
+    }
     private static final int KEY_SIZE = 2048;
 
     @Override
@@ -43,17 +47,21 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 byte[] message = ((EditText) findViewById(R.id.message)).getText().toString().getBytes();
                 byte[] encrypted = encrypt(pair.getPublic(), message);
-                byte[] encoded = Base64.encode(encrypted, Base64.DEFAULT);
-                ((TextView)findViewById(R.id.encryptedMessage)).setText(bytesToHex(encoded));
+                byte[] encoded = Base64.encode(encrypted, Base64.NO_WRAP);
+                ((TextView)findViewById(R.id.encryptedMessage)).setText(new String(encoded));
             }
         });
         decryptButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 String message = ((TextView) findViewById(R.id.encryptedMessage)).getText().toString();
-                byte[] decoded = Base64.decode(message, Base64.DEFAULT);
+                byte[] decoded = Base64.decode(message, Base64.NO_WRAP);
                 byte[] decrypted = decrypt(pair.getPrivate(), decoded);
-                ((TextView)findViewById(R.id.encryptedMessage)).setText(new String(decrypted));
+                try {
+                    ((TextView)findViewById(R.id.encryptedMessage)).setText(new String(decrypted));
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
         });
     }
@@ -66,9 +74,8 @@ public class MainActivity extends AppCompatActivity {
 
     private byte[] decrypt(PrivateKey privKey, byte[] message) {
         try {
-            Cipher cipher = Cipher.getInstance("RSA/NONE/OAEPWithSHA256AndMGF1Padding", "BC");
+            Cipher cipher = Cipher.getInstance("RSA", "SC");
             cipher.init(Cipher.DECRYPT_MODE, privKey);
-//            cipher.update(plaintext);
             return cipher.doFinal(message);
         } catch (Exception e) {
             e.printStackTrace();
@@ -78,12 +85,9 @@ public class MainActivity extends AppCompatActivity {
 
     public static KeyPair generate() {
         try {
-            SecureRandom sr = new SecureRandom();
-            RSAKeyGenParameterSpec spec = new RSAKeyGenParameterSpec(KEY_SIZE, RSAKeyGenParameterSpec.F4);
-            KeyPairGenerator gen = KeyPairGenerator.getInstance("RSA", "BC");
+            KeyPairGenerator gen = KeyPairGenerator.getInstance("RSA", "SC");
             gen.initialize(KEY_SIZE);
             KeyPair pair = gen.generateKeyPair();
-//            PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(pair.getPrivate().getEncoded());
             return pair;
         } catch (Exception e){
             throw new RuntimeException(e);
@@ -99,10 +103,8 @@ public class MainActivity extends AppCompatActivity {
 
     private byte[] encrypt(Key pubKey, byte[] plaintext) {
         try {
-            Cipher cipher = Cipher.getInstance("RSA/NONE/OAEPWithSHA256AndMGF1Padding", "BC");
+            Cipher cipher = Cipher.getInstance("RSA", "SC");
             cipher.init(Cipher.ENCRYPT_MODE, pubKey);
-            Log.v("Format", pubKey.getFormat());
-//            cipher.update(plaintext);
             return cipher.doFinal(plaintext);
         } catch (Exception e) {
             e.printStackTrace();
